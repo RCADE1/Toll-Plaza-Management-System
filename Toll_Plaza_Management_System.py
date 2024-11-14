@@ -13,6 +13,7 @@ def init_db():
                     password TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS tolls (
                     id INTEGER PRIMARY KEY, 
+                    vehicle_number TEXT,
                     lane TEXT, 
                     vehicle_type TEXT, 
                     toll_amount REAL, 
@@ -39,27 +40,54 @@ def login_user(username, password):
     return data
 
 # Toll Plaza Functionalities
+
 def toll_amount_calculation(vehicle_type):
     rates = {'Car': 100, 'Truck': 200, 'Bike': 50}
     return rates.get(vehicle_type, "Unknown Vehicle Type")
 
-def lane_management():
-    st.write("Lane Management functionality here...")
+def assign_lane(vehicle_type):
+    lanes = {'Car': 'Lane 1', 'Truck': 'Lane 2', 'Bike': 'Lane 3'}
+    return lanes.get(vehicle_type, "General Lane")
 
-def user_account_management():
-    st.write("User Account Management functionality here...")
+def lane_management(vehicle_number, vehicle_type):
+    lane = assign_lane(vehicle_type)
+    st.write(f"Vehicle {vehicle_number} of type {vehicle_type} is assigned to {lane}.")
+    return lane
 
-def toll_amount_payment(vehicle_type):
+def toll_amount_payment(vehicle_number, vehicle_type):
     amount = toll_amount_calculation(vehicle_type)
-    st.write(f"The toll amount for {vehicle_type} is {amount}. Proceed to payment.")
+    st.write(f"The toll amount for {vehicle_type} (Vehicle Number: {vehicle_number}) is ₹{amount}.")
+    if st.button("Proceed to Payment"):
+        # Simulate payment confirmation
+        st.success("Payment Successful!")
+        save_payment(vehicle_number, vehicle_type, amount, "Paid")
+
+def save_payment(vehicle_number, vehicle_type, amount, status):
+    conn = sqlite3.connect('toll_plaza.db')
+    c = conn.cursor()
+    lane = assign_lane(vehicle_type)
+    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("INSERT INTO tolls (vehicle_number, lane, vehicle_type, toll_amount, payment_status, date) VALUES (?, ?, ?, ?, ?, ?)",
+              (vehicle_number, lane, vehicle_type, amount, status, date))
+    conn.commit()
+    conn.close()
 
 def reporting_analysis():
-    st.write("Reporting and Analysis of Toll Collections functionality here...")
+    conn = sqlite3.connect('toll_plaza.db')
+    c = conn.cursor()
+    c.execute("SELECT vehicle_type, COUNT(*), SUM(toll_amount) FROM tolls WHERE payment_status='Paid' GROUP BY vehicle_type")
+    data = c.fetchall()
+    conn.close()
 
-def vehicle_management_classification():
-    st.write("Vehicle Management and Classification functionality here...")
+    st.subheader("Toll Collection Report")
+    for vehicle_type, count, total_amount in data:
+        st.write(f"Vehicle Type: {vehicle_type}")
+        st.write(f"Total Vehicles: {count}")
+        st.write(f"Total Amount Collected: ₹{total_amount}")
+        st.write("---")
 
 # Streamlit App
+
 def main():
     st.title("Toll Plaza Management System")
     st.sidebar.title("Navigation")
@@ -112,14 +140,18 @@ def main():
                     st.write(f"The toll amount for a {vehicle_type} is ₹{amount}.")
 
             elif selected_function == "Lane Management":
-                lane_management()
-
-            elif selected_function == "User Account Management":
-                user_account_management()
+                st.subheader("Lane Management")
+                vehicle_number = st.text_input("Enter Vehicle Number")
+                vehicle_type = st.selectbox("Select Vehicle Type", ["Car", "Truck", "Bike"])
+                if st.button("Assign Lane"):
+                    lane = lane_management(vehicle_number, vehicle_type)
+                    st.write(f"Assigned Lane: {lane}")
 
             elif selected_function == "Toll Amount Payment":
+                st.subheader("Toll Amount Payment")
+                vehicle_number = st.text_input("Enter Vehicle Number for Payment")
                 vehicle_type = st.selectbox("Select Vehicle Type for Payment", ["Car", "Truck", "Bike"])
-                toll_amount_payment(vehicle_type)
+                toll_amount_payment(vehicle_number, vehicle_type)
 
             elif selected_function == "Reporting and Analysis":
                 reporting_analysis()
@@ -128,6 +160,6 @@ def main():
                 vehicle_management_classification()
 
 # Initialize Database and Run App
-if __name__ == '__main__':
+if _name_ == '_main_':
     init_db()
-    main()
+    main()
