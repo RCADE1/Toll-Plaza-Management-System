@@ -110,6 +110,20 @@ def get_vehicle_owner_data():
     df = pd.DataFrame(owners_data)
     return df
 
+# Fetch transaction history for a specific vehicle owner
+def get_transaction_history(username):
+    conn = sqlite3.connect('toll_plaza.db')
+    c = conn.cursor()
+    c.execute("SELECT vehicle_number, vehicle_type, toll_amount, date FROM tolls WHERE vehicle_number IN (SELECT vehicle_number FROM users WHERE username = ?)", (username,))
+    transactions = c.fetchall()
+    conn.close()
+    
+    if transactions:
+        history = pd.DataFrame(transactions, columns=["Vehicle Number", "Vehicle Type", "Toll Amount", "Date"])
+        return history
+    else:
+        return None
+
 # Streamlit App
 def main():
     st.title("Toll Plaza Management System")
@@ -165,6 +179,17 @@ def main():
                 
                 # Reporting section for Admin only
                 reporting_analysis()
+
+            if user_type == "Vehicle Owner":
+                st.subheader("Vehicle Owner Dashboard")
+                # Transaction History for Vehicle Owner
+                st.subheader("Transaction History Check")
+                transaction_history = get_transaction_history(username)
+                if transaction_history is not None and not transaction_history.empty:
+                    st.write(f"You have made {len(transaction_history)} transactions.")
+                    st.table(transaction_history)
+                else:
+                    st.write("No transactions found for your vehicle number.")
 
             st.subheader("Toll Plaza Management Dashboard")
             functions = [
