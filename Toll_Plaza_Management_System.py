@@ -7,7 +7,6 @@ from hashlib import sha256
 def init_db():
     conn = sqlite3.connect('toll_plaza.db')
     c = conn.cursor()
-    # Create tables if they don't exist
     c.execute('''CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY, 
                     username TEXT UNIQUE, 
@@ -21,13 +20,6 @@ def init_db():
                     toll_amount REAL, 
                     payment_status TEXT, 
                     date TEXT)''')
-
-    # Check if `user_type` column exists in `users` table
-    c.execute("PRAGMA table_info(users)")
-    columns = [column[1] for column in c.fetchall()]
-    if 'user_type' not in columns:
-        c.execute("ALTER TABLE users ADD COLUMN user_type TEXT")
-
     conn.commit()
     conn.close()
 
@@ -57,7 +49,7 @@ def login_user(username, password):
     conn.close()
     return user
 
-# Toll Plaza Functionalities
+# Toll Functionality
 def toll_amount_calculation(vehicle_type):
     rates = {'Car': 100, 'Truck': 200, 'Bike': 50}
     return rates.get(vehicle_type, "Unknown Vehicle Type")
@@ -75,7 +67,6 @@ def toll_amount_payment(vehicle_number, vehicle_type):
     amount = toll_amount_calculation(vehicle_type)
     st.write(f"The toll amount for {vehicle_type} (Vehicle Number: {vehicle_number}) is ₹{amount}.")
     if st.button("Proceed to Payment"):
-        # Simulate payment confirmation
         st.success("Payment Successful!")
         save_payment(vehicle_number, vehicle_type, amount, "Paid")
 
@@ -119,6 +110,7 @@ def main():
             if user:
                 user_id, username, _, user_type = user
                 st.success(f"Welcome {username} ({user_type})!")
+                # Save user information in session state
                 st.session_state['logged_in'] = True
                 st.session_state['username'] = username
                 st.session_state['user_type'] = user_type
@@ -137,37 +129,40 @@ def main():
         if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
             st.warning("Please login first.")
         else:
-            st.subheader("Toll Plaza Management Dashboard")
+            # Show logged-in user information
+            username = st.session_state.get('username', "Unknown")
             user_type = st.session_state.get('user_type', "Unknown")
-            st.write(f"Logged in as: {user_type}")
-            if user_type == "Admin":
+            st.write(f"Logged in as: {username} ({user_type})")
+            
+            # Dashboard Functionality
+            st.subheader("Toll Plaza Management Dashboard")
+            functions = [
+                "Toll Amount Calculation",
+                "Lane Management",
+                "Toll Amount Payment",
+                "Reporting and Analysis"
+            ]
+            selected_function = st.sidebar.selectbox("Select Function", functions)
+
+            if selected_function == "Toll Amount Calculation":
+                vehicle_type = st.selectbox("Select Vehicle Type", ["Car", "Truck", "Bike"])
+                if st.button("Calculate Toll"):
+                    amount = toll_amount_calculation(vehicle_type)
+                    st.write(f"The toll amount for a {vehicle_type} is ₹{amount}.")
+
+            elif selected_function == "Lane Management":
+                vehicle_number = st.text_input("Enter Vehicle Number")
+                vehicle_type = st.selectbox("Select Vehicle Type", ["Car", "Truck", "Bike"])
+                if st.button("Assign Lane"):
+                    lane_management(vehicle_number, vehicle_type)
+
+            elif selected_function == "Toll Amount Payment":
+                vehicle_number = st.text_input("Enter Vehicle Number for Payment")
+                vehicle_type = st.selectbox("Select Vehicle Type for Payment", ["Car", "Truck", "Bike"])
+                toll_amount_payment(vehicle_number, vehicle_type)
+
+            elif selected_function == "Reporting and Analysis":
                 reporting_analysis()
-            elif user_type == "Vehicle Owner":
-                st.sidebar.write("## Functions")
-                functions = [
-                    "Toll Amount Calculation",
-                    "Lane Management",
-                    "Toll Amount Payment",
-                ]
-                selected_function = st.sidebar.selectbox("Select Function", functions)
-
-                if selected_function == "Toll Amount Calculation":
-                    vehicle_type = st.selectbox("Select Vehicle Type", ["Car", "Truck", "Bike"])
-                    if st.button("Calculate"):
-                        amount = toll_amount_calculation(vehicle_type)
-                        st.write(f"The toll amount for a {vehicle_type} is ₹{amount}.")
-
-                elif selected_function == "Lane Management":
-                    vehicle_number = st.text_input("Enter Vehicle Number")
-                    vehicle_type = st.selectbox("Select Vehicle Type", ["Car", "Truck", "Bike"])
-                    if st.button("Assign Lane"):
-                        lane = lane_management(vehicle_number, vehicle_type)
-                        st.write(f"Assigned Lane: {lane}")
-
-                elif selected_function == "Toll Amount Payment":
-                    vehicle_number = st.text_input("Enter Vehicle Number for Payment")
-                    vehicle_type = st.selectbox("Select Vehicle Type for Payment", ["Car", "Truck", "Bike"])
-                    toll_amount_payment(vehicle_number, vehicle_type)
 
 # Initialize Database and Run App
 if __name__ == '__main__':
