@@ -153,10 +153,8 @@ def main():
                     st.table(owners)
                 else:
                     st.write("No Vehicle Owners have registered yet.")
-            
-            # Admin-only Reporting and Analysis section
-            if user_type == "Admin":
-                st.subheader("Toll Collection Report")
+                
+                # Reporting section for Admin only
                 reporting_analysis()
 
             st.subheader("Toll Plaza Management Dashboard")
