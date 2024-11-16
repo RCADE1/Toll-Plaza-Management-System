@@ -10,7 +10,8 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY, 
                     username TEXT, 
-                    password TEXT)''')
+                    password TEXT,
+                    user_type TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS tolls (
                     id INTEGER PRIMARY KEY, 
                     vehicle_number TEXT,
@@ -22,11 +23,12 @@ def init_db():
     conn.commit()
     conn.close()
 
-def register_user(username, password):
+def register_user(username, password, user_type):
     conn = sqlite3.connect('toll_plaza.db')
     c = conn.cursor()
     hashed_password = sha256(password.encode()).hexdigest()
-    c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+    c.execute("INSERT INTO users (username, password, user_type) VALUES (?, ?, ?)", 
+              (username, hashed_password, user_type))
     conn.commit()
     conn.close()
 
@@ -105,6 +107,7 @@ def main():
                 st.success(f"Welcome {username}!")
                 st.session_state['logged_in'] = True
                 st.session_state['username'] = username
+                st.session_state['user_type'] = user[3]  # Storing user type
             else:
                 st.warning("Incorrect Username/Password")
 
@@ -112,8 +115,9 @@ def main():
         st.subheader("Create a New Account")
         new_user = st.text_input("Username")
         new_password = st.text_input("Password", type="password")
+        user_type = st.selectbox("User Type", ["Admin", "Vehicle Owner"])
         if st.button("Register"):
-            register_user(new_user, new_password)
+            register_user(new_user, new_password, user_type)
             st.success("You have successfully created an account!")
             st.info("Go to Login Menu to login")
 
@@ -121,16 +125,15 @@ def main():
         if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
             st.warning("Please login first.")
         else:
-            st.subheader("Toll Plaza Management Dashboard")
+            user_type = st.session_state['user_type']
+            st.subheader(f"Dashboard for {user_type}")
             st.sidebar.write("## Functions")
-            functions = [
-                "Toll Amount Calculation",
-                "Lane Management",
-                "User Account Management",
-                "Toll Amount Payment",
-                "Reporting and Analysis",
-                "Vehicle Management and Classification"
-            ]
+            
+            if user_type == "Admin":
+                functions = ["Reporting and Analysis", "Vehicle Management and Classification"]
+            else:
+                functions = ["Toll Amount Calculation", "Lane Management", "Toll Amount Payment"]
+
             selected_function = st.sidebar.selectbox("Select Function", functions)
 
             if selected_function == "Toll Amount Calculation":
