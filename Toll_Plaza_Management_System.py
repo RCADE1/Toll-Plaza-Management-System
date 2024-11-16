@@ -138,7 +138,7 @@ def main():
             st.warning("Please login first.")
         else:
             st.subheader("Toll Plaza Management Dashboard")
-            user_type = st.session_state['user_type']
+            user_type = st.session_state.get('user_type', "Unknown")
             st.write(f"Logged in as: {user_type}")
             if user_type == "Admin":
                 reporting_analysis()
