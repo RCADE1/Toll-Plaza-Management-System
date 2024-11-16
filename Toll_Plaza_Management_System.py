@@ -40,6 +40,7 @@ def login_user(username, password):
     return data
 
 # Toll Plaza Functionalities
+
 def toll_amount_calculation(vehicle_type):
     rates = {'Car': 100, 'Truck': 200, 'Bike': 50}
     return rates.get(vehicle_type, "Unknown Vehicle Type")
@@ -85,10 +86,8 @@ def reporting_analysis():
         st.write(f"Total Amount Collected: ₹{total_amount}")
         st.write("---")
 
-def vehicle_management_classification():
-    st.write("Vehicle Management and Classification functionality here...")
-
 # Streamlit App
+
 def main():
     st.title("Toll Plaza Management System")
     st.sidebar.title("Navigation")
@@ -161,6 +160,6 @@ def main():
                 vehicle_management_classification()
 
 # Initialize Database and Run App
-if __name__ == '__main__':
+if _name_ == '_main_':
     init_db()
     main()
