@@ -92,6 +92,14 @@ def vehicle_management_classification():
 
 # Streamlit App
 def main():
+    # Initialize session state
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+    if 'username' not in st.session_state:
+        st.session_state['username'] = None
+    if 'user_type' not in st.session_state:
+        st.session_state['user_type'] = None
+
     st.title("Toll Plaza Management System")
     st.sidebar.title("Navigation")
     menu = ["Login", "Register", "Dashboard"]
@@ -122,7 +130,7 @@ def main():
             st.info("Go to Login Menu to login")
 
     elif choice == "Dashboard":
-        if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
+        if not st.session_state['logged_in']:
             st.warning("Please login first.")
         else:
             user_type = st.session_state['user_type']
