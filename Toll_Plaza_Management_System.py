@@ -94,7 +94,7 @@ def reporting_analysis():
         st.write(f"Total Amount Collected: ₹{total_amount}")
         st.write("---")
 
-def get_vehicle_owner_count():
+def get_vehicle_owner_data():
     conn = sqlite3.connect('toll_plaza.db')
     c = conn.cursor()
     c.execute("SELECT username, user_type FROM users WHERE user_type = 'Vehicle Owner'")
@@ -147,10 +147,11 @@ def main():
             
             if user_type == "Admin":
                 st.subheader("Admin Dashboard")
-                owners = get_vehicle_owner_count()
+                # Display the table of registered vehicle owners
+                owners = get_vehicle_owner_data()
                 if owners:
-                    st.write(f"Number of Vehicle Owners Registered: {len(owners)}")
-                    st.table(owners)
+                    st.write("### Registered Vehicle Owners")
+                    st.table(owners)  # Display in table format
                 else:
                     st.write("No Vehicle Owners have registered yet.")
                 
