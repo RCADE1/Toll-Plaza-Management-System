@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 from datetime import datetime
 from hashlib import sha256
+import pandas as pd
 
 # Database Setup
 def init_db():
@@ -101,10 +102,13 @@ def get_vehicle_owner_data():
     owners = c.fetchall()
     conn.close()
     
-    # Formatting the data into a list of dictionaries to match column names
+    # Formatting the data into a list of dictionaries with Row Number, Name, and User Type
     # Add a "Row Number" column starting from 1
     owners_data = [{"Row Number": idx + 1, "Name": owner[0], "User Type": owner[1]} for idx, owner in enumerate(owners)]
-    return owners_data
+    
+    # Convert to DataFrame for cleaner table representation
+    df = pd.DataFrame(owners_data)
+    return df
 
 # Streamlit App
 def main():
@@ -152,10 +156,10 @@ def main():
             if user_type == "Admin":
                 st.subheader("Admin Dashboard")
                 # Display the table of registered vehicle owners with Row Numbers starting from 1
-                owners = get_vehicle_owner_data()
-                if owners:
+                owners_df = get_vehicle_owner_data()
+                if not owners_df.empty:
                     st.write("### Registered Vehicle Owners")
-                    st.table(owners)  # Display in table format with "Row Number", "Name", and "User Type"
+                    st.table(owners_df)  # Display in table format with "Row Number", "Name", and "User Type"
                 else:
                     st.write("No Vehicle Owners have registered yet.")
                 
