@@ -180,17 +180,6 @@ def main():
                 # Reporting section for Admin only
                 reporting_analysis()
 
-            if user_type == "Vehicle Owner":
-                st.subheader("Vehicle Owner Dashboard")
-                # Transaction History for Vehicle Owner
-                st.subheader("Transaction History Check")
-                transaction_history = get_transaction_history(username)
-                if transaction_history is not None and not transaction_history.empty:
-                    st.write(f"You have made {len(transaction_history)} transactions.")
-                    st.table(transaction_history)
-                else:
-                    st.write("No transactions found for your vehicle number.")
-
             st.subheader("Toll Plaza Management Dashboard")
             functions = [
                 "Toll Amount Calculation",
@@ -199,6 +188,7 @@ def main():
             
             if user_type == "Vehicle Owner":
                 functions.append("Toll Amount Payment")
+                functions.append("Transaction History Check")  # Add Transaction History option only for Vehicle Owners
 
             selected_function = st.sidebar.selectbox("Select Function", functions)
 
@@ -218,6 +208,15 @@ def main():
                 vehicle_number = st.text_input("Enter Vehicle Number for Payment")
                 vehicle_type = st.selectbox("Select Vehicle Type for Payment", ["Car", "Truck", "Bike"])
                 toll_amount_payment(vehicle_number, vehicle_type)
+
+            elif selected_function == "Transaction History Check" and user_type == "Vehicle Owner":
+                st.subheader("Transaction History Check")
+                transaction_history = get_transaction_history(username)
+                if transaction_history is not None and not transaction_history.empty:
+                    st.write(f"You have made {len(transaction_history)} transactions.")
+                    st.table(transaction_history)
+                else:
+                    st.write("No transactions found for your vehicle number.")
 
 # Initialize Database and Run App
 if __name__ == '__main__':
