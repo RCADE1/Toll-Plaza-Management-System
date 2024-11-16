@@ -102,7 +102,8 @@ def get_vehicle_owner_data():
     conn.close()
     
     # Formatting the data into a list of dictionaries to match column names
-    owners_data = [{"Name": owner[0], "User Type": owner[1]} for owner in owners]
+    # Add a "Row Number" column starting from 1
+    owners_data = [{"Row Number": idx + 1, "Name": owner[0], "User Type": owner[1]} for idx, owner in enumerate(owners)]
     return owners_data
 
 # Streamlit App
@@ -150,11 +151,11 @@ def main():
             
             if user_type == "Admin":
                 st.subheader("Admin Dashboard")
-                # Display the table of registered vehicle owners
+                # Display the table of registered vehicle owners with Row Numbers starting from 1
                 owners = get_vehicle_owner_data()
                 if owners:
                     st.write("### Registered Vehicle Owners")
-                    st.table(owners)  # Display in table format with "Name" and "User Type"
+                    st.table(owners)  # Display in table format with "Row Number", "Name", and "User Type"
                 else:
                     st.write("No Vehicle Owners have registered yet.")
                 
