@@ -161,8 +161,11 @@ def main():
             functions = [
                 "Toll Amount Calculation",
                 "Lane Management",
-                "Toll Amount Payment"
             ]
+            
+            if user_type == "Vehicle Owner":
+                functions.append("Toll Amount Payment")
+
             selected_function = st.sidebar.selectbox("Select Function", functions)
 
             if selected_function == "Toll Amount Calculation":
@@ -177,7 +180,7 @@ def main():
                 if st.button("Assign Lane"):
                     lane_management(vehicle_number, vehicle_type)
 
-            elif selected_function == "Toll Amount Payment":
+            elif selected_function == "Toll Amount Payment" and user_type == "Vehicle Owner":
                 vehicle_number = st.text_input("Enter Vehicle Number for Payment")
                 vehicle_type = st.selectbox("Select Vehicle Type for Payment", ["Car", "Truck", "Bike"])
                 toll_amount_payment(vehicle_number, vehicle_type)
