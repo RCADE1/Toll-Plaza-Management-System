@@ -154,16 +154,16 @@ def main():
                 else:
                     st.write("No Vehicle Owners have registered yet.")
             
-            else:
-                st.subheader("Vehicle Owner Dashboard")
-                st.write("Dashboard functionality for Vehicle Owners coming soon.")
-            
+            # Admin-only Reporting and Analysis section
+            if user_type == "Admin":
+                st.subheader("Toll Collection Report")
+                reporting_analysis()
+
             st.subheader("Toll Plaza Management Dashboard")
             functions = [
                 "Toll Amount Calculation",
                 "Lane Management",
-                "Toll Amount Payment",
-                "Reporting and Analysis"
+                "Toll Amount Payment"
             ]
             selected_function = st.sidebar.selectbox("Select Function", functions)
 
@@ -183,9 +183,6 @@ def main():
                 vehicle_number = st.text_input("Enter Vehicle Number for Payment")
                 vehicle_type = st.selectbox("Select Vehicle Type for Payment", ["Car", "Truck", "Bike"])
                 toll_amount_payment(vehicle_number, vehicle_type)
-
-            elif selected_function == "Reporting and Analysis":
-                reporting_analysis()
 
 # Initialize Database and Run App
 if __name__ == '__main__':
