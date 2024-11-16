@@ -132,7 +132,7 @@ def main():
             # Show logged-in user information
             username = st.session_state.get('username', "Unknown")
             user_type = st.session_state.get('user_type', "Unknown")
-            st.write(f"Logged in as: {username} ({user_type})")
+            
             
             # Dashboard Functionality
             st.subheader("Toll Plaza Management Dashboard")
