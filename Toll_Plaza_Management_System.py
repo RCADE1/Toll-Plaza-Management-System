@@ -100,7 +100,10 @@ def get_vehicle_owner_data():
     c.execute("SELECT username, user_type FROM users WHERE user_type = 'Vehicle Owner'")
     owners = c.fetchall()
     conn.close()
-    return owners
+    
+    # Formatting the data into a list of dictionaries to match column names
+    owners_data = [{"Name": owner[0], "User Type": owner[1]} for owner in owners]
+    return owners_data
 
 # Streamlit App
 def main():
@@ -151,7 +154,7 @@ def main():
                 owners = get_vehicle_owner_data()
                 if owners:
                     st.write("### Registered Vehicle Owners")
-                    st.table(owners)  # Display in table format
+                    st.table(owners)  # Display in table format with "Name" and "User Type"
                 else:
                     st.write("No Vehicle Owners have registered yet.")
                 
