@@ -164,16 +164,21 @@ def main():
             username = st.session_state.get('username', "Unknown")
             user_type = st.session_state.get('user_type', "Unknown")
             
-            # Dashboard Functionality
             st.write(f"Logged in as: {username} ({user_type})")
             
+            # Add "Log Out" button
+            if st.button("Log Out"):
+                st.session_state.clear()
+                st.success("You have successfully logged out.")
+                st.stop()
+
             if user_type == "Admin":
                 st.subheader("Admin Dashboard")
-                # Display the table of registered vehicle owners with Row Numbers starting from 1
+                # Display the table of registered vehicle owners
                 owners_df = get_vehicle_owner_data()
                 if not owners_df.empty:
                     st.write("### Registered Vehicle Owners")
-                    st.table(owners_df)  # Display in table format with "Row Number", "Name", and "User Type"
+                    st.table(owners_df)
                 else:
                     st.write("No Vehicle Owners have registered yet.")
                 
@@ -188,7 +193,7 @@ def main():
             
             if user_type == "Vehicle Owner":
                 functions.append("Toll Amount Payment")
-                functions.append("Transaction History Check")  # Add Transaction History option only for Vehicle Owners
+                functions.append("Transaction History Check")
 
             selected_function = st.sidebar.selectbox("Select Function", functions)
 
