@@ -21,6 +21,12 @@ def init_db():
                     toll_amount REAL, 
                     payment_status TEXT, 
                     date TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS toll_rates (
+                    vehicle_type TEXT PRIMARY KEY, 
+                    toll_amount REAL)''')
+    # Default toll rates
+    default_rates = [('Car', 100), ('Truck', 200), ('Bike', 50)]
+    c.executemany("INSERT OR IGNORE INTO toll_rates (vehicle_type, toll_amount) VALUES (?, ?)", default_rates)
     conn.commit()
     conn.close()
 
@@ -52,8 +58,12 @@ def login_user(username, password, user_type):
 
 # Toll Functionality
 def toll_amount_calculation(vehicle_type):
-    rates = {'Car': 100, 'Truck': 200, 'Bike': 50}
-    return rates.get(vehicle_type, "Unknown Vehicle Type")
+    conn = sqlite3.connect('toll_plaza.db')
+    c = conn.cursor()
+    c.execute("SELECT toll_amount FROM toll_rates WHERE vehicle_type = ?", (vehicle_type,))
+    result = c.fetchone()
+    conn.close()
+    return result[0] if result else "Unknown Vehicle Type"
 
 def assign_lane(vehicle_type):
     lanes = {'Car': 'Lane 1', 'Truck': 'Lane 2', 'Bike': 'Lane 3'}
@@ -119,6 +129,20 @@ def get_transaction_history(username):
     else:
         return None
 
+def update_toll_details():
+    st.subheader("Update Toll Details")
+    vehicle_type = st.selectbox("Select Vehicle Type to Update", ["Car", "Truck", "Bike"])
+    current_rate = toll_amount_calculation(vehicle_type)
+    st.write(f"Current Toll Rate for {vehicle_type}: ₹{current_rate}")
+    new_rate = st.number_input(f"Enter New Toll Rate for {vehicle_type}", min_value=0.0, value=current_rate)
+    if st.button("Save Details"):
+        conn = sqlite3.connect('toll_plaza.db')
+        c = conn.cursor()
+        c.execute("UPDATE toll_rates SET toll_amount = ? WHERE vehicle_type = ?", (new_rate, vehicle_type))
+        conn.commit()
+        conn.close()
+        st.success(f"Toll rate for {vehicle_type} updated to ₹{new_rate}")
+
 # Streamlit App
 def main():
     st.title("Toll Plaza Management System")
@@ -178,7 +202,9 @@ def main():
             st.subheader("Toll Plaza Management Dashboard")
             functions = ["Toll Amount Calculation"]
 
-            if user_type == "Vehicle Owner":
+            if user_type == "Admin":
+                functions.append("Update Toll Details")
+            elif user_type == "Vehicle Owner":
                 functions.extend(["Lane Management", "Toll Amount Payment", "Transaction History Check"])
 
             selected_function = st.sidebar.selectbox("Select Function", functions)
@@ -208,6 +234,9 @@ def main():
                     st.table(transaction_history)
                 else:
                     st.write("No transactions found for your vehicle number.")
+
+            elif selected_function == "Update Toll Details" and user_type == "Admin":
+                update_toll_details()
 
 # Initialize Database and Run App
 if __name__ == '__main__':
