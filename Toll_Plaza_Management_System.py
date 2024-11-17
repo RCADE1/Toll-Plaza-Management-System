@@ -188,22 +188,11 @@ def main():
                 st.success("You have successfully logged out.")
                 st.stop()
 
-            if user_type == "Admin":
-                st.subheader("Admin Dashboard")
-                owners_df = get_vehicle_owner_data()
-                if not owners_df.empty:
-                    st.write("### Registered Vehicle Owners")
-                    st.table(owners_df)
-                else:
-                    st.write("No Vehicle Owners have registered yet.")
-                
-                reporting_analysis()
-
             st.subheader("Toll Plaza Management Dashboard")
             functions = ["Toll Amount Calculation"]
 
             if user_type == "Admin":
-                functions.append("Update Toll Details")
+                functions.extend(["Update Toll Details", "Toll Collection Report"])
             elif user_type == "Vehicle Owner":
                 functions.extend(["Lane Management", "Toll Amount Payment", "Transaction History Check"])
 
@@ -237,6 +226,9 @@ def main():
 
             elif selected_function == "Update Toll Details" and user_type == "Admin":
                 update_toll_details()
+
+            elif selected_function == "Toll Collection Report" and user_type == "Admin":
+                reporting_analysis()
 
 # Initialize Database and Run App
 if __name__ == '__main__':
