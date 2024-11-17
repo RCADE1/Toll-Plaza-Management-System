@@ -15,8 +15,7 @@ def init_db():
                     user_type TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS tolls (
                     id INTEGER PRIMARY KEY, 
-                    username TEXT, 
-                    vehicle_number TEXT, 
+                    vehicle_number TEXT,
                     lane TEXT, 
                     vehicle_type TEXT, 
                     toll_amount REAL, 
@@ -70,22 +69,65 @@ def assign_lane(vehicle_type):
     lanes = {'Car': 'Lane 1', 'Truck': 'Lane 2', 'Bike': 'Lane 3'}
     return lanes.get(vehicle_type, "General Lane")
 
-def save_payment(username, vehicle_number, vehicle_type, amount, status):
-    conn = sqlite3.connect('toll_plaza.db')
-    c = conn.cursor()
+def lane_management(vehicle_number, vehicle_type):
     lane = assign_lane(vehicle_type)
-    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c.execute("INSERT INTO tolls (username, vehicle_number, lane, vehicle_type, toll_amount, payment_status, date) VALUES (?, ?, ?, ?, ?, ?, ?)",
-              (username, vehicle_number, lane, vehicle_type, amount, status, date))
-    conn.commit()
-    conn.close()
+    st.write(f"Vehicle {vehicle_number} of type {vehicle_type} is assigned to {lane}.")
+    return lane
 
-def toll_amount_payment(username, vehicle_number, vehicle_type):
+def toll_amount_payment(vehicle_number, vehicle_type):
     amount = toll_amount_calculation(vehicle_type)
     st.write(f"The toll amount for {vehicle_type} (Vehicle Number: {vehicle_number}) is ₹{amount}.")
     if st.button("Proceed to Payment"):
         st.success("Payment Successful!")
-        save_payment(username, vehicle_number, vehicle_type, amount, "Paid")
+        save_payment(vehicle_number, vehicle_type, amount, "Paid")
+
+def save_payment(vehicle_number, vehicle_type, amount, status):
+    conn = sqlite3.connect('toll_plaza.db')
+    c = conn.cursor()
+    lane = assign_lane(vehicle_type)
+    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("INSERT INTO tolls (vehicle_number, lane, vehicle_type, toll_amount, payment_status, date) VALUES (?, ?, ?, ?, ?, ?)",
+              (vehicle_number, lane, vehicle_type, amount, status, date))
+    conn.commit()
+    conn.close()
+
+def reporting_analysis():
+    conn = sqlite3.connect('toll_plaza.db')
+    c = conn.cursor()
+    c.execute("SELECT vehicle_type, COUNT(*), SUM(toll_amount) FROM tolls WHERE payment_status='Paid' GROUP BY vehicle_type")
+    data = c.fetchall()
+    conn.close()
+
+    st.subheader("Toll Collection Report")
+    for vehicle_type, count, total_amount in data:
+        st.write(f"Vehicle Type: {vehicle_type}")
+        st.write(f"Total Vehicles: {count}")
+        st.write(f"Total Amount Collected: ₹{total_amount}")
+        st.write("---")
+
+def get_vehicle_owner_data():
+    conn = sqlite3.connect('toll_plaza.db')
+    c = conn.cursor()
+    c.execute("SELECT username, user_type FROM users WHERE user_type = 'Vehicle Owner'")
+    owners = c.fetchall()
+    conn.close()
+    
+    owners_data = [{"Row Number": idx + 1, "Name": owner[0], "User Type": owner[1]} for idx, owner in enumerate(owners)]
+    df = pd.DataFrame(owners_data)
+    return df
+
+def get_transaction_history(username):
+    conn = sqlite3.connect('toll_plaza.db')
+    c = conn.cursor()
+    c.execute("SELECT vehicle_number, vehicle_type, toll_amount, date FROM tolls WHERE vehicle_number IN (SELECT vehicle_number FROM users WHERE username = ?)", (username,))
+    transactions = c.fetchall()
+    conn.close()
+    
+    if transactions:
+        history = pd.DataFrame(transactions, columns=["Vehicle Number", "Vehicle Type", "Toll Amount", "Date"])
+        return history
+    else:
+        return None
 
 def update_toll_details():
     st.subheader("Update Toll Details")
@@ -100,33 +142,6 @@ def update_toll_details():
         conn.commit()
         conn.close()
         st.success(f"Toll rate for {vehicle_type} updated to ₹{new_rate}")
-
-def transaction_history_check(username):
-    conn = sqlite3.connect('toll_plaza.db')
-    c = conn.cursor()
-    c.execute("SELECT vehicle_number, vehicle_type, toll_amount, date FROM tolls WHERE username = ?", (username,))
-    transactions = c.fetchall()
-    conn.close()
-    if transactions:
-        history = pd.DataFrame(transactions, columns=["Vehicle Number", "Vehicle Type", "Toll Amount", "Date"])
-        return history
-    else:
-        return None
-
-# Reporting
-def reporting_analysis():
-    conn = sqlite3.connect('toll_plaza.db')
-    c = conn.cursor()
-    c.execute("SELECT vehicle_type, COUNT(*), SUM(toll_amount) FROM tolls WHERE payment_status='Paid' GROUP BY vehicle_type")
-    data = c.fetchall()
-    conn.close()
-
-    st.subheader("Toll Collection Report")
-    for vehicle_type, count, total_amount in data:
-        st.write(f"Vehicle Type: {vehicle_type}")
-        st.write(f"Total Vehicles: {count}")
-        st.write(f"Total Amount Collected: ₹{total_amount}")
-        st.write("---")
 
 # Streamlit App
 def main():
@@ -143,6 +158,7 @@ def main():
         if st.button("Login"):
             user = login_user(username, password, user_type)
             if user:
+                user_id, username, _, user_type = user
                 st.success(f"Welcome {username} ({user_type})!")
                 st.session_state['logged_in'] = True
                 st.session_state['username'] = username
@@ -162,21 +178,23 @@ def main():
         if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
             st.warning("Please login first.")
         else:
-            username = st.session_state['username']
-            user_type = st.session_state['user_type']
-
+            username = st.session_state.get('username', "Unknown")
+            user_type = st.session_state.get('user_type', "Unknown")
+            
+            st.write(f"Logged in as: {username} ({user_type})")
+            
             if st.button("Log Out"):
                 st.session_state.clear()
                 st.success("You have successfully logged out.")
                 st.stop()
 
-            st.subheader("Dashboard")
+            st.subheader("Toll Plaza Management Dashboard")
             functions = ["Toll Amount Calculation"]
 
             if user_type == "Admin":
                 functions.extend(["Update Toll Details", "Toll Collection Report"])
             elif user_type == "Vehicle Owner":
-                functions.extend(["Toll Amount Payment", "Transaction History Check"])
+                functions.extend(["Lane Management", "Toll Amount Payment", "Transaction History Check"])
 
             selected_function = st.sidebar.selectbox("Select Function", functions)
 
@@ -186,19 +204,25 @@ def main():
                     amount = toll_amount_calculation(vehicle_type)
                     st.write(f"The toll amount for a {vehicle_type} is ₹{amount}.")
 
+            elif selected_function == "Lane Management" and user_type == "Vehicle Owner":
+                vehicle_number = st.text_input("Enter Vehicle Number")
+                vehicle_type = st.selectbox("Select Vehicle Type", ["Car", "Truck", "Bike"])
+                if st.button("Assign Lane"):
+                    lane_management(vehicle_number, vehicle_type)
+
             elif selected_function == "Toll Amount Payment" and user_type == "Vehicle Owner":
                 vehicle_number = st.text_input("Enter Vehicle Number for Payment")
                 vehicle_type = st.selectbox("Select Vehicle Type for Payment", ["Car", "Truck", "Bike"])
-                toll_amount_payment(username, vehicle_number, vehicle_type)
+                toll_amount_payment(vehicle_number, vehicle_type)
 
             elif selected_function == "Transaction History Check" and user_type == "Vehicle Owner":
-                st.subheader("Transaction History")
-                transaction_history = transaction_history_check(username)
+                st.subheader("Transaction History Check")
+                transaction_history = get_transaction_history(username)
                 if transaction_history is not None and not transaction_history.empty:
                     st.write(f"You have made {len(transaction_history)} transactions.")
                     st.table(transaction_history)
                 else:
-                    st.write("No transactions found for your account.")
+                    st.write("No transactions found for your vehicle number.")
 
             elif selected_function == "Update Toll Details" and user_type == "Admin":
                 update_toll_details()
