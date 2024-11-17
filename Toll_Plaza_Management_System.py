@@ -102,15 +102,10 @@ def get_vehicle_owner_data():
     owners = c.fetchall()
     conn.close()
     
-    # Formatting the data into a list of dictionaries with Row Number, Name, and User Type
-    # Add a "Row Number" column starting from 1
     owners_data = [{"Row Number": idx + 1, "Name": owner[0], "User Type": owner[1]} for idx, owner in enumerate(owners)]
-    
-    # Convert to DataFrame for cleaner table representation
     df = pd.DataFrame(owners_data)
     return df
 
-# Fetch transaction history for a specific vehicle owner
 def get_transaction_history(username):
     conn = sqlite3.connect('toll_plaza.db')
     c = conn.cursor()
@@ -141,7 +136,6 @@ def main():
             if user:
                 user_id, username, _, user_type = user
                 st.success(f"Welcome {username} ({user_type})!")
-                # Save user information in session state
                 st.session_state['logged_in'] = True
                 st.session_state['username'] = username
                 st.session_state['user_type'] = user_type
@@ -160,13 +154,11 @@ def main():
         if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
             st.warning("Please login first.")
         else:
-            # Show logged-in user information
             username = st.session_state.get('username', "Unknown")
             user_type = st.session_state.get('user_type', "Unknown")
             
             st.write(f"Logged in as: {username} ({user_type})")
             
-            # Add "Log Out" button
             if st.button("Log Out"):
                 st.session_state.clear()
                 st.success("You have successfully logged out.")
@@ -174,7 +166,6 @@ def main():
 
             if user_type == "Admin":
                 st.subheader("Admin Dashboard")
-                # Display the table of registered vehicle owners
                 owners_df = get_vehicle_owner_data()
                 if not owners_df.empty:
                     st.write("### Registered Vehicle Owners")
@@ -182,18 +173,13 @@ def main():
                 else:
                     st.write("No Vehicle Owners have registered yet.")
                 
-                # Reporting section for Admin only
                 reporting_analysis()
 
             st.subheader("Toll Plaza Management Dashboard")
-            functions = [
-                "Toll Amount Calculation",
-                "Lane Management",
-            ]
-            
+            functions = ["Toll Amount Calculation"]
+
             if user_type == "Vehicle Owner":
-                functions.append("Toll Amount Payment")
-                functions.append("Transaction History Check")
+                functions.extend(["Lane Management", "Toll Amount Payment", "Transaction History Check"])
 
             selected_function = st.sidebar.selectbox("Select Function", functions)
 
@@ -203,7 +189,7 @@ def main():
                     amount = toll_amount_calculation(vehicle_type)
                     st.write(f"The toll amount for a {vehicle_type} is ₹{amount}.")
 
-            elif selected_function == "Lane Management":
+            elif selected_function == "Lane Management" and user_type == "Vehicle Owner":
                 vehicle_number = st.text_input("Enter Vehicle Number")
                 vehicle_type = st.selectbox("Select Vehicle Type", ["Car", "Truck", "Bike"])
                 if st.button("Assign Lane"):
