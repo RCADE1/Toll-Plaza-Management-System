@@ -231,6 +231,6 @@ def main():
                 reporting_analysis()
 
 # Initialize Database and Run App
-if _name_ == '_main_':
+if __name__ == '__main__':
     init_db()
     main()
