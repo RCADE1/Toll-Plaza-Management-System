@@ -233,4 +233,4 @@ def main():
 # Initialize Database and Run App
 if _name_ == '_main_':
     init_db()
-    main()
+    main()
